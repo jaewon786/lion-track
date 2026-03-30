@@ -1,73 +1,53 @@
-# React + TypeScript + Vite
+# 🦁 Lion Track
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+교육 프로그램 참가자 관리 시스템 | Education Program Management System
 
-Currently, two official plugins are available:
+## 📋 프로젝트 개요
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**Lion Track**는 교육 프로그램의 전반적인 관리를 위한 종합 웹 애플리케이션입니다. 관리자와 참가자가 각각의 역할에 따라 주간 일정, 과제, 출석, 공지사항 등을 효율적으로 관리할 수 있습니다.
 
-## React Compiler
+## ✨ 주요 기능
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🔐 인증 및 권한 관리
+- 회원가입 (이메일 기반)
+- 로그인/로그아웃
+- 역할 기반 접근 제어 (일반 사용자, 관리자)
+- 프로필 관리
 
-## Expanding the ESLint configuration
+### 👥 참가자 기능
+- **대시보드**: 주간 요약, 과제 현황, 출석 통계 한눈에 보기
+- **주간 관리**: 주간 일정 조회 및 상세 정보 확인
+- **과제 관리**: 과제 목록 조회, 상세 정보, 제출 현황 파악
+- **출석 관리**: 자신의 출석 현황 조회 및 인증
+- **공지사항**: 교육 관련 공지사항 조회
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### ⚙️ 관리자 기능
+- **주간 관리**: 주간 일정 생성, 수정, 삭제
+- **과제 관리**: 과제 생성, 수정, 삭제, 제출 현황 관리
+- **출석 관리**: 참가자 출석 기록 관리 및 통계
+- **회원 관리**: 전체 참가자 조회 및 정보 관리
+- **통계**: 출석률, 과제 완료율, 참가자 분석 등
+- **공지사항**: 공지사항 작성 및 관리
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🛠 기술 스택
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 프론트엔드
+- **React** 19.2.4 - UI 라이브러리
+- **TypeScript** 5.9.3 - 타입 안정성
+- **Vite** 8.0.1 - 고속 개발 서버 및 빌드 도구
+- **React Router** 7.13.1 - 클라이언트 사이드 라우팅
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### UI/UX
+- **Tailwind CSS** 4.2.2 - 유틸리티 기반 스타일링
+- **Lucide React** 0.577.0 - 아이콘 라이브러리
+- **React Hot Toast** 2.6.0 - 토스트 알림
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 데이터 관리
+- **Supabase** - 백엔드 및 데이터베이스 서비스
+- **React Query** (@tanstack/react-query) 5.94.5 - 서버 상태 관리 및 캐싱
+- **Zustand** 5.0.12 - 클라이언트 상태 관리
+- **date-fns** 4.1.0 - 날짜 유틸리티
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### 개발 도구
+- **ESLint** 9.39.4 - 코드 린팅
+- **TypeScript ESLint** - TypeScript 린팅
