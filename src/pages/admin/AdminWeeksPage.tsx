@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useCreateWeek, useWeeks, useUpdateWeek, useDeleteWeek } from '../../hooks/useWeeks'
-import { useMaterials, useCreateMaterial, uploadMaterialFile, useDeleteMaterial, downloadFile } from '../../hooks/useMaterials'
+import { useMaterials, useCreateMaterial, uploadMaterialFile, useDeleteMaterial, getMaterialDownloadUrl } from '../../hooks/useMaterials'
 import { formatDate } from '../../utils/format'
 import { FileText, Link as LinkIcon, Plus, Upload, Trash2, Edit, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -164,14 +164,23 @@ export default function AdminWeeksPage() {
   }
 
   const handleDownloadMaterial = async (material: typeof materials[0]) => {
+    if (material.type === 'LINK') {
+      window.open(material.url, '_blank')
+      return
+    }
+    const newTab = window.open('', '_blank')
     try {
-      if (material.type === 'FILE') {
-        await downloadFile(material.url, material.title)
-        toast.success('다운로드가 시작되었습니다.')
+      const signedUrl = await getMaterialDownloadUrl(material.url)
+      if (signedUrl && newTab) {
+        newTab.location.href = signedUrl
+      } else if (signedUrl) {
+        window.location.href = signedUrl
       } else {
-        window.open(material.url, '_blank')
+        newTab?.close()
+        toast.error('다운로드에 실패했습니다.')
       }
     } catch {
+      newTab?.close()
       toast.error('다운로드에 실패했습니다.')
     }
   }

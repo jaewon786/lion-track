@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import { FileText, ExternalLink, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useWeek } from '../../hooks/useWeeks'
-import { useMaterials, downloadFile, getMaterialDownloadUrl } from '../../hooks/useMaterials'
+import { useMaterials, getMaterialDownloadUrl } from '../../hooks/useMaterials'
 import { useAssignments, useMySubmissions } from '../../hooks/useAssignments'
 import { formatDateTime, getDDay } from '../../utils/format'
 
@@ -18,25 +18,27 @@ export default function WeekDetailPage() {
   const weekMats = materials.filter((m) => m.is_public)
   const weekAssignments = assignments.filter((a) => a.week_id === week.id)
 
-  const handleDownload = async (url: string, type: string, fileName?: string) => {
+  const handleDownload = async (url: string, type: string) => {
     if (type === 'LINK') {
       window.open(url, '_blank', 'noopener,noreferrer')
-    } else {
-      try {
-        await downloadFile(url, fileName || '자료')
-      } catch {
-        // 다운로드 실패 시 새 탭에서 열기 시도
-        try {
-          const signedUrl = await getMaterialDownloadUrl(url)
-          if (signedUrl) {
-            window.open(signedUrl, '_blank', 'noopener,noreferrer')
-          } else {
-            toast.error('다운로드에 실패했습니다.')
-          }
-        } catch {
-          toast.error('다운로드에 실패했습니다.')
-        }
+      return
+    }
+    // 모바일에서 비동기 후 window.open은 팝업 차단됨
+    // → 먼저 동기적으로 탭을 열고 이후 URL 설정
+    const newTab = window.open('', '_blank')
+    try {
+      const signedUrl = await getMaterialDownloadUrl(url)
+      if (signedUrl && newTab) {
+        newTab.location.href = signedUrl
+      } else if (signedUrl) {
+        window.location.href = signedUrl
+      } else {
+        newTab?.close()
+        toast.error('다운로드에 실패했습니다.')
       }
+    } catch {
+      newTab?.close()
+      toast.error('다운로드에 실패했습니다.')
     }
   }
 
@@ -65,7 +67,7 @@ export default function WeekDetailPage() {
               <div style={{ fontWeight: 600, fontSize: 14 }}>{m.title}</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{m.description}</div>
             </div>
-            <button className="btn btn-sm btn-secondary" onClick={() => handleDownload(m.url, m.type, m.title)}>
+            <button className="btn btn-sm btn-secondary" onClick={() => handleDownload(m.url, m.type)}>
               {m.type === 'FILE' ? <><Download size={14} /> 다운로드</> : <><ExternalLink size={14} /> 열기</>}
             </button>
           </div>
