@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import {
   Home, BookOpen, ClipboardList, CheckCircle, Users, Bell,
-  LogOut, Menu, X, Clock, BarChart3, Key,
+  LogOut, Menu, X, Clock, BarChart3, Key, MessageCircle,
 } from 'lucide-react'
 
 export default function PageLayout({ children }: { children: React.ReactNode }) {
@@ -35,6 +35,7 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
     ]},
     { section: '기타', items: [
       { to: '/notices', label: '공지사항', icon: <Bell size={20} /> },
+      { to: '/questions', label: '질문 게시판', icon: <MessageCircle size={20} /> },
     ]},
   ]
 
@@ -50,6 +51,7 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
     ]},
     { section: '기타', items: [
       { to: '/notices', label: '공지사항', icon: <Bell size={20} /> },
+      { to: '/questions', label: '질문 게시판', icon: <MessageCircle size={20} /> },
     ]},
   ]
 

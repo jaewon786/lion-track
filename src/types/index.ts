@@ -77,3 +77,19 @@ export interface Feedback {
   comment: string
   created_at: string
 }
+
+export interface Question {
+  id: string
+  title: string
+  content: string
+  created_by: string
+  created_at: string
+}
+
+export interface Answer {
+  id: string
+  question_id: string
+  content: string
+  created_by: string
+  created_at: string
+}

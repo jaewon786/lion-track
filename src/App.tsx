@@ -17,6 +17,8 @@ import AttendanceCheckPage from './pages/attendance/AttendanceCheckPage'
 import MyAttendancePage from './pages/attendance/MyAttendancePage'
 import NoticesPage from './pages/notices/NoticesPage'
 import NoticeDetailPage from './pages/notices/NoticeDetailPage'
+import QuestionsPage from './pages/questions/QuestionsPage'
+import QuestionDetailPage from './pages/questions/QuestionDetailPage'
 import AdminWeeksPage from './pages/admin/AdminWeeksPage'
 import AdminAssignmentsPage from './pages/admin/AdminAssignmentsPage'
 import AdminAttendancePage from './pages/admin/AdminAttendancePage'
@@ -67,6 +69,8 @@ function AppInner() {
           <Route path="/attendance/my" element={<MyAttendancePage />} />
           <Route path="/notices" element={<NoticesPage />} />
           <Route path="/notices/:id" element={<NoticeDetailPage />} />
+          <Route path="/questions" element={<QuestionsPage />} />
+          <Route path="/questions/:id" element={<QuestionDetailPage />} />
 
           {/* Admin routes */}
           <Route element={<AdminRoute />}>
