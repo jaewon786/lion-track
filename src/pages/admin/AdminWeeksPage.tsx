@@ -168,20 +168,24 @@ export default function AdminWeeksPage() {
       window.open(material.url, '_blank')
       return
     }
-    const newTab = window.open('', '_blank')
     try {
       const signedUrl = await getMaterialDownloadUrl(material.url)
-      if (signedUrl && newTab) {
-        newTab.location.href = signedUrl
-      } else if (signedUrl) {
-        window.location.href = signedUrl
-      } else {
-        newTab?.close()
-        toast.error('다운로드에 실패했습니다.')
-      }
-    } catch {
-      newTab?.close()
-      toast.error('다운로드에 실패했습니다.')
+      if (!signedUrl) throw new Error('다운로드 URL 생성 실패')
+      const res = await fetch(signedUrl)
+      if (!res.ok) throw new Error('파일을 가져오지 못했습니다.')
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = material.title || material.url.split('/').pop() || 'download'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(blobUrl)
+    } catch (err) {
+      console.error('[다운로드 오류]', err)
+      const msg = err instanceof Error ? err.message : '다운로드에 실패했습니다.'
+      toast.error(`다운로드 실패: ${msg}`)
     }
   }
 

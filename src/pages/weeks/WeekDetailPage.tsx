@@ -18,27 +18,27 @@ export default function WeekDetailPage() {
   const weekMats = materials.filter((m) => m.is_public)
   const weekAssignments = assignments.filter((a) => a.week_id === week.id)
 
-  const handleDownload = async (url: string, type: string) => {
+  const handleDownload = async (url: string, type: string, fileName?: string) => {
     if (type === 'LINK') {
       window.open(url, '_blank', 'noopener,noreferrer')
       return
     }
-    // 모바일에서 비동기 후 window.open은 팝업 차단됨
-    // → 먼저 동기적으로 탭을 열고 이후 URL 설정
-    const newTab = window.open('', '_blank')
     try {
       const signedUrl = await getMaterialDownloadUrl(url)
-      if (signedUrl && newTab) {
-        newTab.location.href = signedUrl
-      } else if (signedUrl) {
-        window.location.href = signedUrl
-      } else {
-        newTab?.close()
-        toast.error('다운로드에 실패했습니다.')
-      }
+      if (!signedUrl) throw new Error('다운로드 URL 생성 실패')
+      const res = await fetch(signedUrl)
+      if (!res.ok) throw new Error('파일을 가져오지 못했습니다.')
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = fileName || url.split('/').pop() || 'download'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(blobUrl)
     } catch (err) {
       console.error('[다운로드 오류]', err)
-      newTab?.close()
       const msg = err instanceof Error ? err.message : '다운로드에 실패했습니다.'
       toast.error(`다운로드 실패: ${msg}`)
     }
@@ -69,7 +69,7 @@ export default function WeekDetailPage() {
               <div style={{ fontWeight: 600, fontSize: 14 }}>{m.title}</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{m.description}</div>
             </div>
-            <button className="btn btn-sm btn-secondary" onClick={() => handleDownload(m.url, m.type)}>
+            <button className="btn btn-sm btn-secondary" onClick={() => handleDownload(m.url, m.type, m.title)}>
               {m.type === 'FILE' ? <><Download size={14} /> 다운로드</> : <><ExternalLink size={14} /> 열기</>}
             </button>
           </div>
