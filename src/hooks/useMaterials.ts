@@ -50,7 +50,9 @@ export function useDeleteMaterial() {
 }
 
 export async function uploadMaterialFile(weekId: string, file: File) {
-  const filePath = `week-${weekId}/${Date.now()}-${file.name}`
+  const ext = file.name.split('.').pop()?.replace(/[^a-zA-Z0-9]/g, '') ?? ''
+  const safeFileName = ext ? `${Date.now()}.${ext}` : `${Date.now()}`
+  const filePath = `week-${weekId}/${safeFileName}`
   const { error: uploadError } = await supabase.storage
     .from('materials')
     .upload(filePath, file)

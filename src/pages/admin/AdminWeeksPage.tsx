@@ -46,8 +46,12 @@ export default function AdminWeeksPage() {
   }, [showModal, form.week_id, weeks])
 
   const handleSubmit = async () => {
-    if (!form.title.trim() || !form.week_id) {
-      toast.error('주차와 자료명을 입력하세요.')
+    if (!form.week_id) {
+      toast.error('주차를 선택하세요.')
+      return
+    }
+    if (!form.title.trim()) {
+      toast.error('자료명을 입력하세요.')
       return
     }
 
@@ -77,9 +81,14 @@ export default function AdminWeeksPage() {
       toast.success('자료가 업로드되었습니다.')
       setShowModal(false)
     } catch (error) {
-      const message = error instanceof Error ? error.message : '업로드에 실패했습니다.'
+      console.error('[자료 업로드 오류]', error)
+      const message = error instanceof Error ? error.message : (typeof error === 'object' && error !== null && 'message' in error ? String((error as { message: unknown }).message) : '업로드에 실패했습니다.')
       if (message.toLowerCase().includes('mime type') && message.toLowerCase().includes('not supported')) {
-        toast.error('업로드 실패: 파일 형식이 허용되지 않습니다. Supabase Storage 버킷의 Allowed MIME types에 해당 형식을 추가하세요.')
+        toast.error('업로드 실패: 파일 형식이 허용되지 않습니다. Supabase Storage 버킷의 Allowed MIME types 설정을 확인하세요.')
+      } else if (message.toLowerCase().includes('bucket') || message.toLowerCase().includes('not found')) {
+        toast.error('업로드 실패: Supabase Storage에 "materials" 버킷이 없습니다. 대시보드에서 버킷을 생성하세요.')
+      } else if (message.toLowerCase().includes('policy') || message.toLowerCase().includes('permission') || message.toLowerCase().includes('denied')) {
+        toast.error('업로드 실패: 권한이 없습니다. Supabase Storage 버킷의 접근 정책을 확인하세요.')
       } else {
         toast.error(`업로드 실패: ${message}`)
       }
@@ -204,7 +213,7 @@ export default function AdminWeeksPage() {
             <input
               id="file-upload"
               type="file"
-              accept=".pdf,.zip,.doc,.docx,image/*"
+              accept=".pdf,.zip,.doc,.docx,.pptx,.ppt,.xlsx,.xls,.txt,.hwp,image/*,video/*"
               style={{ display: 'none' }}
               onChange={(e) => setForm({ ...form, file: e.target.files?.[0] ?? null })}
             />
@@ -217,7 +226,7 @@ export default function AdminWeeksPage() {
         )}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button className="btn btn-secondary" onClick={() => setShowModal(false)}>취소</button>
-          <button className="btn btn-primary" onClick={handleSubmit} disabled={createMaterial.isPending || !form.week_id}>
+          <button className="btn btn-primary" onClick={handleSubmit} disabled={createMaterial.isPending}>
             {createMaterial.isPending ? '업로드 중...' : '업로드'}
           </button>
         </div>
