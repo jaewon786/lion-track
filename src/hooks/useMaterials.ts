@@ -61,11 +61,12 @@ export async function uploadMaterialFile(weekId: string, file: File) {
 }
 
 export async function getMaterialDownloadUrl(filePath: string) {
-    const { data } = await supabase.storage
-      .from('materials')
-      .createSignedUrl(filePath, 3600)
-    return data?.signedUrl
-  }
+  const { data, error } = await supabase.storage
+    .from('materials')
+    .createSignedUrl(filePath, 3600)
+  if (error) throw error
+  return data?.signedUrl
+}
 
   export async function downloadFile(filePath: string, fileName: string) {
     try {

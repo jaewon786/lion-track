@@ -36,9 +36,11 @@ export default function WeekDetailPage() {
         newTab?.close()
         toast.error('다운로드에 실패했습니다.')
       }
-    } catch {
+    } catch (err) {
+      console.error('[다운로드 오류]', err)
       newTab?.close()
-      toast.error('다운로드에 실패했습니다.')
+      const msg = err instanceof Error ? err.message : '다운로드에 실패했습니다.'
+      toast.error(`다운로드 실패: ${msg}`)
     }
   }
 
