@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useAssignments, useSubmissions, useCreateAssignment, useUpdateAssignment, useDeleteAssignment, downloadSubmissionFile } from '../../hooks/useAssignments'
 import { useWeeks } from '../../hooks/useWeeks'
@@ -22,12 +22,6 @@ export default function AdminAssignmentsPage() {
   const [editingAssignmentId, setEditingAssignmentId] = useState<string | null>(null)
   const [form, setForm] = useState({ week_id: '', title: '', description: '', due_at: '', submit_type: 'GITHUB_URL' })
   const [editForm, setEditForm] = useState({ week_id: '', title: '', description: '', due_at: '', submit_type: 'GITHUB_URL', status: 'open' })
-
-  useEffect(() => {
-    if (showModal && !form.week_id && weeks.length) {
-      setForm((prev) => ({ ...prev, week_id: weeks[0].id }))
-    }
-  }, [showModal, form.week_id, weeks])
 
   const selected = assignments.find((a) => a.id === selectedId)
 
@@ -67,8 +61,9 @@ export default function AdminAssignmentsPage() {
       })
       toast.success('과제가 출제되었습니다.')
       setShowModal(false)
-    } catch {
-      toast.error('과제 출제에 실패했습니다.')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '과제 출제에 실패했습니다.'
+      toast.error(message)
     }
   }
 
