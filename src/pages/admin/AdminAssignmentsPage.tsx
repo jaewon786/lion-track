@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useAssignments, useSubmissions, useCreateAssignment, useUpdateAssignment, useDeleteAssignment, downloadSubmissionFile } from '../../hooks/useAssignments'
+import { useAssignments, useSubmissions, useCreateAssignment, useUpdateAssignment, useDeleteAssignment, useUpdateSubmission, useAdminDeleteSubmission, downloadSubmissionFile } from '../../hooks/useAssignments'
 import { useWeeks } from '../../hooks/useWeeks'
 import { useMembers } from '../../hooks/useProfiles'
 import { formatDateTime, getDDay, getStatusColor, getStatusLabel } from '../../utils/format'
@@ -15,6 +15,8 @@ export default function AdminAssignmentsPage() {
   const createAssignment = useCreateAssignment()
   const updateAssignment = useUpdateAssignment()
   const deleteAssignment = useDeleteAssignment()
+  const updateSubmission = useUpdateSubmission()
+  const deleteSubmission = useAdminDeleteSubmission()
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -135,6 +137,23 @@ export default function AdminAssignmentsPage() {
       toast.success('제출 파일 다운로드가 시작되었습니다.')
     } catch {
       toast.error('제출 파일 다운로드에 실패했습니다.')
+    }
+  }
+
+  const toggleSubStatus = async (userId: string) => {
+    if (!selectedId) return
+    const subs = allSubmissions.filter((s) => s.assignment_id === selectedId)
+    const sub = subs.find((s) => s.user_id === userId)
+    try {
+      if (!sub) {
+        await updateSubmission.mutateAsync({ assignmentId: selectedId, userId, status: 'submitted' })
+      } else if (sub.status === 'submitted') {
+        await updateSubmission.mutateAsync({ assignmentId: selectedId, userId, status: 'late' })
+      } else {
+        await deleteSubmission.mutateAsync({ assignmentId: selectedId, userId })
+      }
+    } catch {
+      toast.error('상태 변경 실패')
     }
   }
 
@@ -291,6 +310,7 @@ export default function AdminAssignmentsPage() {
         </div>
         <div className="card">
           <div className="section-title">제출 현황</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>클릭하여 상태 변경 (미제출 → 제출 → 지각 제출 → 미제출)</div>
           <table className="data-table">
             <thead>
               <tr><th>이름</th><th>학과</th><th>상태</th><th>제출 시간</th><th>GitHub URL</th><th>제출 파일</th></tr>
@@ -304,9 +324,13 @@ export default function AdminAssignmentsPage() {
                     <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{m.name}</td>
                     <td>{m.department}</td>
                     <td>
-                      <span style={{ color: getStatusColor(sub?.status), fontWeight: 600, fontSize: 12 }}>
+                      <button className="btn btn-sm" style={{
+                        background: sub ? `${getStatusColor(sub.status)}18` : 'rgba(148,163,184,0.1)',
+                        color: sub ? getStatusColor(sub.status) : 'var(--text-muted)',
+                        border: 'none', fontWeight: 600,
+                      }} onClick={() => toggleSubStatus(m.id)}>
                         {sub ? getStatusLabel(sub.status) : '미제출'}
-                      </span>
+                      </button>
                     </td>
                     <td style={{ fontSize: 12 }}>{sub ? formatDateTime(sub.submitted_at) : '-'}</td>
                     <td style={{ fontSize: 12 }}>
@@ -322,13 +346,7 @@ export default function AdminAssignmentsPage() {
                           <span style={{ maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={fileName}>
                             {fileName}
                           </span>
-                          <button
-                            className="btn btn-sm btn-secondary"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDownloadSubmission(sub.file_url!)
-                            }}
-                          >
+                          <button className="btn btn-sm btn-secondary" onClick={(e) => { e.stopPropagation(); handleDownloadSubmission(sub.file_url!) }}>
                             <Download size={14} /> 다운로드
                           </button>
                         </div>

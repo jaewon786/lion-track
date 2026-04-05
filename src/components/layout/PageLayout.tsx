@@ -24,7 +24,7 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
 
   const adminNav = [
     { section: '메인', items: [
-      { to: '/admin', label: '대시보드', icon: <Home size={20} /> },
+      { to: '/', label: '대시보드', icon: <Home size={20} /> },
       { to: '/admin/stats', label: '통계 현황', icon: <BarChart3 size={20} /> },
     ]},
     { section: '운영 관리', items: [
@@ -41,7 +41,7 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
 
   const memberNav = [
     { section: '메인', items: [
-      { to: '/dashboard', label: '대시보드', icon: <Home size={20} /> },
+      { to: '/', label: '대시보드', icon: <Home size={20} /> },
     ]},
     { section: '학습', items: [
       { to: '/weeks', label: '주차별 수업', icon: <BookOpen size={20} /> },
@@ -78,7 +78,7 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  end={item.to === '/admin' || item.to === '/dashboard' || item.to === '/attendance'}
+                  end={item.to === '/' || item.to === '/attendance'}
                   className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                   onClick={() => setSidebarOpen(false)}
                 >

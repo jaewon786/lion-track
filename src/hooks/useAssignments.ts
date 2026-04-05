@@ -175,6 +175,43 @@ export async function uploadSubmissionFile(assignmentId: string, userId: string,
   return filePath
 }
 
+export function useUpdateSubmission() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ assignmentId, userId, status }: { assignmentId: string; userId: string; status: 'submitted' | 'late' }) => {
+      const { error } = await supabase
+        .from('submissions')
+        .upsert(
+          { assignment_id: assignmentId, user_id: userId, status, submitted_at: new Date().toISOString() },
+          { onConflict: 'assignment_id,user_id' }
+        )
+      if (error) throw error
+      return true
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['submissions'] })
+    },
+  })
+}
+
+export function useAdminDeleteSubmission() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ assignmentId, userId }: { assignmentId: string; userId: string }) => {
+      const { error } = await supabase
+        .from('submissions')
+        .delete()
+        .eq('assignment_id', assignmentId)
+        .eq('user_id', userId)
+      if (error) throw error
+      return true
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['submissions'] })
+    },
+  })
+}
+
 export function useCreateAssignment() {
   const queryClient = useQueryClient()
   return useMutation({
