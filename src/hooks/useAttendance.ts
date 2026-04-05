@@ -170,46 +170,22 @@ export function useUpdateAttendance() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ weekId, userId, status }: { weekId: string; userId: string; status: string }) => {
-      const existingPromise = (async () => {
-        return await supabase
+      if (status === 'PENDING') {
+        // 미정으로 변경 시 기존 기록 삭제
+        const { error } = await supabase
           .from('attendances')
-          .select('id')
+          .delete()
           .eq('week_id', weekId)
           .eq('user_id', userId)
-          .maybeSingle()
-      })()
-
-      const { data: existing, error: existingError } = await withTimeout(
-        existingPromise, 15000, '상태 조회가 지연되고 있습니다.'
-      )
-      if (existingError) throw existingError
-
-      if (status === 'PENDING' && existing) {
-        // 미정으로 변경 시 기존 기록 삭제
-        const deletePromise = (async () => {
-          return await supabase
-            .from('attendances')
-            .delete()
-            .eq('id', existing.id)
-        })()
-        const { error } = await withTimeout(deletePromise, 15000, '상태 변경이 지연되고 있습니다.')
         if (error) throw error
-      } else if (existing) {
-        const updatePromise = (async () => {
-          return await supabase
-            .from('attendances')
-            .update({ status })
-            .eq('id', existing.id)
-        })()
-        const { error } = await withTimeout(updatePromise, 15000, '상태 변경이 지연되고 있습니다.')
-        if (error) throw error
-      } else if (status !== 'PENDING') {
-        const insertPromise = (async () => {
-          return await supabase
-            .from('attendances')
-            .insert({ week_id: weekId, user_id: userId, status, checked_at: new Date().toISOString() })
-        })()
-        const { error } = await withTimeout(insertPromise, 15000, '출석 생성이 지연되고 있습니다.')
+      } else {
+        // upsert: 기존 기록이 있으면 status 업데이트, 없으면 새로 생성
+        const { error } = await supabase
+          .from('attendances')
+          .upsert(
+            { week_id: weekId, user_id: userId, status, checked_at: new Date().toISOString() },
+            { onConflict: 'week_id,user_id' }
+          )
         if (error) throw error
       }
       return true

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useWeeks } from '../../hooks/useWeeks'
 import { useMembers } from '../../hooks/useProfiles'
 import { useAllAttendances, useCreateAttendCode, useUpdateAttendance, useActiveAttendCode } from '../../hooks/useAttendance'
@@ -18,23 +18,23 @@ export default function AdminAttendancePage() {
   const [attendCode, setAttendCode] = useState<string | null>(null)
   const [timer, setTimer] = useState<number | null>(null)
 
+  const effectiveWeek = useMemo(() => {
+    if (selectedWeek) return selectedWeek
+    const cur = weeks.find((w) => w.status === 'current')
+    return cur?.id ?? weeks[0]?.id ?? ''
+  }, [selectedWeek, weeks])
+
   // DB에서 활성 코드 복원
   useEffect(() => {
     if (activeCode && !attendCode) {
       const remaining = Math.floor((new Date(activeCode.expires_at).getTime() - Date.now()) / 1000)
       if (remaining > 0) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setAttendCode(activeCode.code)
         setTimer(remaining)
       }
     }
   }, [activeCode, attendCode])
-
-  useEffect(() => {
-    if (weeks.length && !selectedWeek) {
-      const cur = weeks.find((w) => w.status === 'current')
-      setSelectedWeek(cur?.id ?? weeks[0].id)
-    }
-  }, [weeks, selectedWeek])
 
   useEffect(() => {
     if (timer === null || timer <= 0) return
@@ -46,7 +46,7 @@ export default function AdminAttendancePage() {
     const code = String(Math.floor(1000 + Math.random() * 9000))
     try {
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString()
-      await createCodeMutation.mutateAsync({ code, weekId: selectedWeek, expiresAt })
+      await createCodeMutation.mutateAsync({ code, weekId: effectiveWeek, expiresAt })
       setAttendCode(code)
       setTimer(15 * 60)
       toast.success('출석 코드가 생성되었습니다.')
@@ -55,8 +55,8 @@ export default function AdminAttendancePage() {
     }
   }
 
-  const weekAtts = attendances.filter((a) => a.week_id === selectedWeek)
-  const currentWeek = weeks.find((w) => w.id === selectedWeek)
+  const weekAtts = attendances.filter((a) => a.week_id === effectiveWeek)
+  const currentWeek = weeks.find((w) => w.id === effectiveWeek)
 
   const toggleStatus = async (userId: string) => {
     const existing = weekAtts.find((a) => a.user_id === userId)
@@ -65,13 +65,13 @@ export default function AdminAttendancePage() {
       const idx = statuses.indexOf(existing.status as typeof statuses[number])
       const nextStatus = statuses[(idx + 1) % statuses.length]
       try {
-        await updateMutation.mutateAsync({ weekId: selectedWeek, userId, status: nextStatus })
+        await updateMutation.mutateAsync({ weekId: effectiveWeek, userId, status: nextStatus })
       } catch {
         toast.error('상태 변경 실패')
       }
     } else {
       try {
-        await updateMutation.mutateAsync({ weekId: selectedWeek, userId, status: 'PENDING' })
+        await updateMutation.mutateAsync({ weekId: effectiveWeek, userId, status: 'PRESENT' })
       } catch {
         toast.error('상태 변경 실패')
       }
@@ -89,7 +89,7 @@ export default function AdminAttendancePage() {
         <div className="section-title">출석 코드 생성</div>
         <div className="form-group" style={{ maxWidth: 300 }}>
           <label className="form-label">주차 선택</label>
-          <select className="form-input" value={selectedWeek} onChange={(e) => setSelectedWeek(e.target.value)}>
+          <select className="form-input" value={effectiveWeek} onChange={(e) => setSelectedWeek(e.target.value)}>
             {weeks.map((w) => <option key={w.id} value={w.id}>{w.number}주차 - {w.title}</option>)}
           </select>
         </div>
