@@ -18,9 +18,8 @@ export default function MemberDashboard() {
   const presentCount = myAttendances.filter((a) => a.status === 'PRESENT').length
   const attRate = Math.round((presentCount / 10) * 100)
 
-  const closedAssignments = assignments.filter((a) => a.status === 'closed')
-  const submittedClosed = mySubmissions.filter((s) => closedAssignments.some((a) => a.id === s.assignment_id)).length
-  const subRate = closedAssignments.length > 0 ? Math.round((submittedClosed / closedAssignments.length) * 100) : 0
+  const submittedCount = mySubmissions.filter((s) => assignments.some((a) => a.id === s.assignment_id)).length
+  const subRate = assignments.length > 0 ? Math.round((submittedCount / assignments.length) * 100) : 0
 
   const openAssignments = assignments.filter((a) => a.status === 'open')
 
@@ -43,7 +42,7 @@ export default function MemberDashboard() {
         <div className="stat-card">
           <div className="stat-label">과제 제출률</div>
           <div className="stat-value" style={{ color: subRate >= 80 ? 'var(--green)' : subRate >= 50 ? 'var(--yellow)' : 'var(--red)' }}>{subRate}%</div>
-          <div className="stat-sub">{submittedClosed}/{closedAssignments.length}개 제출</div>
+          <div className="stat-sub">{submittedCount}/{assignments.length}개 제출</div>
           <div className="progress-bar" style={{ marginTop: 12 }}>
             <div className="progress-fill" style={{ width: `${subRate}%`, background: subRate >= 80 ? 'var(--green)' : subRate >= 50 ? 'var(--yellow)' : 'var(--red)' }} />
           </div>
