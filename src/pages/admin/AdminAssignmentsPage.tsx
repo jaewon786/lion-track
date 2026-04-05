@@ -311,9 +311,9 @@ export default function AdminAssignmentsPage() {
         <div className="card">
           <div className="section-title">제출 현황</div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>클릭하여 상태 변경 (미제출 → 제출 → 지각 제출 → 미제출)</div>
-          <table className="data-table">
+          <table className="data-table" style={{ whiteSpace: 'nowrap' }}>
             <thead>
-              <tr><th>이름</th><th>학과</th><th>상태</th><th>제출 시간</th><th>GitHub URL</th><th>제출 파일</th></tr>
+              <tr><th style={{ textAlign: 'center' }}>이름</th><th style={{ width: '1%', textAlign: 'center' }}>학과</th><th style={{ textAlign: 'center' }}>상태</th><th>제출 시간</th><th>GitHub URL</th><th>제출 파일</th><th style={{ width: '1%' }}></th></tr>
             </thead>
             <tbody>
               {members.map((m) => {
@@ -321,9 +321,9 @@ export default function AdminAssignmentsPage() {
                 const fileName = sub?.file_url ? getDisplayFileName(sub.file_url) : ''
                 return (
                   <tr key={m.id}>
-                    <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{m.name}</td>
-                    <td>{m.department}</td>
-                    <td>
+                    <td style={{ fontWeight: 600, color: 'var(--text-primary)', textAlign: 'center' }}>{m.name}</td>
+                    <td style={{ textAlign: 'center' }}>{m.department}</td>
+                    <td style={{ textAlign: 'center' }}>
                       <button className="btn btn-sm" style={{
                         background: sub ? `${getStatusColor(sub.status)}18` : 'rgba(148,163,184,0.1)',
                         color: sub ? getStatusColor(sub.status) : 'var(--text-muted)',
@@ -340,17 +340,15 @@ export default function AdminAssignmentsPage() {
                         </a>
                       ) : '-'}
                     </td>
-                    <td style={{ fontSize: 12 }}>
+                    <td style={{ fontSize: 12 }} title={fileName}>
+                      {fileName || '-'}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
                       {sub?.file_url ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={fileName}>
-                            {fileName}
-                          </span>
-                          <button className="btn btn-sm btn-secondary" onClick={(e) => { e.stopPropagation(); handleDownloadSubmission(sub.file_url!) }}>
-                            <Download size={14} /> 다운로드
-                          </button>
-                        </div>
-                      ) : '-'}
+                        <button className="btn btn-sm btn-secondary" onClick={(e) => { e.stopPropagation(); handleDownloadSubmission(sub.file_url!) }}>
+                          <Download size={14} /> 다운로드
+                        </button>
+                      ) : null}
                     </td>
                   </tr>
                 )
