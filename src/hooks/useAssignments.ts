@@ -150,7 +150,14 @@ export function useSubmitAssignment() {
 }
 
 export async function uploadSubmissionFile(assignmentId: string, userId: string, file: File) {
-  const safeName = file.name.replace(/\s+/g, '_')
+  const ext = file.name.includes('.') ? '.' + file.name.split('.').pop() : ''
+  const baseName = file.name.slice(0, file.name.length - ext.length)
+  const sanitized = baseName
+    .replace(/[^\x20-\x7E]/g, '')   // 한글 등 비ASCII 제거
+    .replace(/[^a-zA-Z0-9._-]/g, '_') // 허용되지 않는 특수문자 → _
+    .replace(/_{2,}/g, '_')            // 연속 _ 정리
+    .replace(/^_+|_+$/g, '')           // 앞뒤 _ 제거
+  const safeName = (sanitized || 'file') + ext
   const filePath = `assignment-${assignmentId}/${userId}/${Date.now()}-${safeName}`
 
   const { error } = await supabase.storage
@@ -172,19 +179,23 @@ export function useCreateAssignment() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (assignment: Omit<Assignment, 'id'>) => {
-      const resultPromise = (async () => {
-        return await supabase
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000)
+      try {
+        const { error } = await supabase
           .from('assignments')
           .insert(assignment)
-      })()
-
-      const { error } = await withTimeout(
-        resultPromise,
-        15000,
-        '요청이 지연되고 있습니다. 잠시 후 다시 시도해주세요.'
-      )
-      if (error) throw error
-      return true
+          .abortSignal(controller.signal)
+        if (error) throw error
+        return true
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          throw new Error('요청이 지연되고 있습니다. 잠시 후 다시 시도해주세요.')
+        }
+        throw err
+      } finally {
+        clearTimeout(timeoutId)
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignments'] })
