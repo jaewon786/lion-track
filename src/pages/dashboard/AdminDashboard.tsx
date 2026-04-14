@@ -16,7 +16,8 @@ export default function AdminDashboard() {
   const { data: attendances = [] } = useAllAttendances()
   const { data: members = [] } = useMembers()
 
-  const completedWeeks = weeks.filter((w) => w.status !== 'upcoming')
+  const attendedWeekIds = new Set(attendances.map((a) => a.week_id))
+  const completedWeeks = weeks.filter((w) => w.status !== 'upcoming' || attendedWeekIds.has(w.id))
   const totalPossibleAtt = completedWeeks.length * members.length
   const presentCount = attendances.filter((a) => a.status === 'PRESENT').length
   const overallAttRate = totalPossibleAtt > 0 ? Math.round((presentCount / totalPossibleAtt) * 100) : 0
