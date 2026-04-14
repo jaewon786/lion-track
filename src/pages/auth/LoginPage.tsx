@@ -34,7 +34,7 @@ export default function LoginPage() {
         <div className="login-logo">
           <div className="logo-mark" style={{ width: 56, height: 56, fontSize: 22, margin: '0 auto 16px', borderRadius: 16 }}>LT</div>
           <div className="login-title">LION-TRACK</div>
-          <div className="login-subtitle">프론트엔드 세션 학습 관리 플랫폼</div>
+          <div className="login-subtitle">세션 학습 관리 플랫폼</div>
         </div>
 
         {error && <div className="login-error">{error}</div>}

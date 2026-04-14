@@ -17,16 +17,26 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, message: string):
 }
 
 export function useAssignments() {
+  const user = useAuthStore((s) => s.user)
+  const activeTrack = useAuthStore((s) => s.activeTrack)
   return useQuery({
-    queryKey: ['assignments'],
+    queryKey: ['assignments', activeTrack],
     queryFn: async (): Promise<Assignment[]> => {
+      const { data: trackWeeks } = await supabase
+        .from('weeks')
+        .select('id')
+        .eq('track', activeTrack)
+      const weekIds = (trackWeeks ?? []).map((w) => w.id)
+      if (weekIds.length === 0) return []
       const { data, error } = await supabase
         .from('assignments')
         .select('*')
+        .in('week_id', weekIds)
         .order('due_at', { ascending: false })
       if (error) throw error
       return data
     },
+    enabled: !!user,
   })
 }
 

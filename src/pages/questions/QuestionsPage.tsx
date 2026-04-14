@@ -10,6 +10,7 @@ export default function QuestionsPage() {
   const navigate = useNavigate()
   const { data: questions = [], isLoading } = useQuestions()
   const user = useAuthStore((s) => s.user)
+  const activeTrack = useAuthStore((s) => s.activeTrack)
   const createQuestion = useCreateQuestion()
 
   const [showModal, setShowModal] = useState(false)
@@ -18,7 +19,7 @@ export default function QuestionsPage() {
   const handleCreate = async () => {
     if (!form.title.trim() || !form.content.trim()) return
     try {
-      await createQuestion.mutateAsync({ title: form.title, content: form.content, created_by: user!.id })
+      await createQuestion.mutateAsync({ title: form.title, content: form.content, track: activeTrack, created_by: user!.id })
       toast.success('질문이 등록되었습니다.')
       setShowModal(false)
     } catch {

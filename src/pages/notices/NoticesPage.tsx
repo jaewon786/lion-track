@@ -10,7 +10,8 @@ export default function NoticesPage() {
   const navigate = useNavigate()
   const { data: notices = [], isLoading } = useNotices()
   const user = useAuthStore((s) => s.user)
-  const isAdmin = user?.role === 'ADMIN'
+  const activeTrack = useAuthStore((s) => s.activeTrack)
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
   const createNotice = useCreateNotice()
 
   const [showModal, setShowModal] = useState(false)
@@ -19,7 +20,7 @@ export default function NoticesPage() {
   const handleCreate = async () => {
     if (!form.title.trim() || !form.content.trim()) return
     try {
-      await createNotice.mutateAsync({ title: form.title, content: form.content, created_by: user!.id })
+      await createNotice.mutateAsync({ title: form.title, content: form.content, track: activeTrack, created_by: user!.id })
       toast.success('공지가 등록되었습니다.')
       setShowModal(false)
     } catch {

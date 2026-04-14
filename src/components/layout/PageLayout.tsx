@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
+import { TRACKS, TRACK_LABELS, type Track } from '../../types'
 import {
   Home, BookOpen, ClipboardList, CheckCircle, Users, Bell,
   LogOut, Menu, X, Clock, BarChart3, Key, MessageCircle,
@@ -8,10 +9,11 @@ import {
 
 export default function PageLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { user, signOut } = useAuthStore()
+  const { user, signOut, activeTrack, setActiveTrack } = useAuthStore()
   const navigate = useNavigate()
 
-  const isAdmin = user?.role === 'ADMIN'
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN'
 
   const handleLogout = async () => {
     try {
@@ -21,6 +23,8 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
     }
     navigate('/login', { replace: true })
   }
+
+  const roleLabel = isSuperAdmin ? '총괄 운영진' : isAdmin ? '운영진' : '아기사자'
 
   const adminNav = [
     { section: '메인', items: [
@@ -66,9 +70,31 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
             <div className="logo-mark">LT</div>
             <div className="logo-text">
               <span className="logo-name">LION-TRACK</span>
-              <span className="logo-sub">14기 프론트엔드</span>
+              <span className="logo-sub">14기 {TRACK_LABELS[activeTrack]}</span>
             </div>
           </div>
+          {isSuperAdmin && (
+            <select
+              value={activeTrack}
+              onChange={(e) => setActiveTrack(e.target.value as Track)}
+              style={{
+                width: '100%',
+                marginTop: 8,
+                padding: '8px 10px',
+                borderRadius: 8,
+                border: '1px solid var(--accent)',
+                background: 'var(--accent-dim)',
+                color: 'var(--accent)',
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {TRACKS.map((t) => (
+                <option key={t} value={t}>{TRACK_LABELS[t]}</option>
+              ))}
+            </select>
+          )}
         </div>
         <nav className="nav">
           {navItems.map((sec) => (
@@ -94,7 +120,7 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
             <div className="user-avatar">{user?.name?.[0] ?? '?'}</div>
             <div className="user-info">
               <div className="user-name">{user?.name}</div>
-              <div className="user-role">{isAdmin ? '운영진' : '아기사자'}</div>
+              <div className="user-role">{roleLabel}</div>
             </div>
             <button className="logout-btn" onClick={handleLogout}>
               <LogOut size={18} />

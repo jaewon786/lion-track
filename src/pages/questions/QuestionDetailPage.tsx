@@ -11,7 +11,7 @@ export default function QuestionDetailPage() {
   const { data: question, isLoading } = useQuestion(id!)
   const { data: answers = [] } = useAnswers(id!)
   const user = useAuthStore((s) => s.user)
-  const isAdmin = user?.role === 'ADMIN'
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
   const isAuthor = question?.created_by === user?.id
   const updateQuestion = useUpdateQuestion()
   const deleteQuestion = useDeleteQuestion()

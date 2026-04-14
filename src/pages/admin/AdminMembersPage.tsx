@@ -1,9 +1,25 @@
 import { useProfiles } from '../../hooks/useProfiles'
+import { useAuthStore } from '../../stores/authStore'
+import { TRACK_LABELS } from '../../types'
 
 export default function AdminMembersPage() {
-  const { data: users = [], isLoading } = useProfiles()
+  const activeTrack = useAuthStore((s) => s.activeTrack)
+  const { data: allUsers = [], isLoading } = useProfiles()
+  const users = allUsers.filter((u) => u.track === activeTrack)
 
   if (isLoading) return <div style={{ padding: 32, textAlign: 'center' }}>로딩 중...</div>
+
+  const getRoleLabel = (role: string) => {
+    if (role === 'SUPER_ADMIN') return '총괄 운영진'
+    if (role === 'ADMIN') return '운영진'
+    return '아기사자'
+  }
+
+  const getRoleStyle = (role: string) => {
+    if (role === 'SUPER_ADMIN') return { background: 'rgba(168,85,247,0.1)', color: '#a855f7' }
+    if (role === 'ADMIN') return { background: 'var(--accent-dim)', color: 'var(--accent)' }
+    return { background: 'rgba(59,130,246,0.1)', color: 'var(--blue)' }
+  }
 
   return (
     <div className="fade-in">
@@ -14,7 +30,7 @@ export default function AdminMembersPage() {
       <div className="card">
         <table className="data-table">
           <thead>
-            <tr><th>이름</th><th>이메일</th><th>학과</th><th>역할</th></tr>
+            <tr><th>이름</th><th>이메일</th><th>학과</th><th>트랙</th><th>역할</th></tr>
           </thead>
           <tbody>
             {users.map((u) => (
@@ -28,15 +44,19 @@ export default function AdminMembersPage() {
                 <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>{u.email}</td>
                 <td>{u.department}</td>
                 <td>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 6, background: 'rgba(148,163,184,0.1)', color: 'var(--text-muted)' }}>
+                    {TRACK_LABELS[u.track] ?? u.track}
+                  </span>
+                </td>
+                <td>
                   <span style={{
                     fontSize: 11,
                     fontWeight: 600,
                     padding: '4px 10px',
                     borderRadius: 6,
-                    background: u.role === 'ADMIN' ? 'var(--accent-dim)' : 'rgba(59,130,246,0.1)',
-                    color: u.role === 'ADMIN' ? 'var(--accent)' : 'var(--blue)',
+                    ...getRoleStyle(u.role),
                   }}>
-                    {u.role === 'ADMIN' ? '운영진' : '아기사자'}
+                    {getRoleLabel(u.role)}
                   </span>
                 </td>
               </tr>

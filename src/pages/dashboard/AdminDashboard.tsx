@@ -4,24 +4,25 @@ import { useWeeks } from '../../hooks/useWeeks'
 import { useAssignments, useSubmissions } from '../../hooks/useAssignments'
 import { useAllAttendances } from '../../hooks/useAttendance'
 import { useMembers } from '../../hooks/useProfiles'
+import { useAuthStore } from '../../stores/authStore'
+import { TRACK_LABELS } from '../../types'
 import { formatDateTime } from '../../utils/format'
 
-const TOTAL_WEEKS = 10
-const TOTAL_PARTICIPANTS = 8
-
 export default function AdminDashboard() {
+  const activeTrack = useAuthStore((s) => s.activeTrack)
   const { data: weeks = [] } = useWeeks()
   const { data: assignments = [] } = useAssignments()
   const { data: submissions = [] } = useSubmissions()
   const { data: attendances = [] } = useAllAttendances()
   const { data: members = [] } = useMembers()
 
-  const totalPossibleAtt = TOTAL_WEEKS * TOTAL_PARTICIPANTS
+  const completedWeeks = weeks.filter((w) => w.status !== 'upcoming')
+  const totalPossibleAtt = completedWeeks.length * members.length
   const presentCount = attendances.filter((a) => a.status === 'PRESENT').length
   const overallAttRate = totalPossibleAtt > 0 ? Math.round((presentCount / totalPossibleAtt) * 100) : 0
 
   const gradedAssignments = assignments.filter((a) => a.status !== 'draft')
-  const totalPossibleSubs = TOTAL_WEEKS * TOTAL_PARTICIPANTS
+  const totalPossibleSubs = gradedAssignments.length * members.length
   const totalSubs = submissions.filter((s) => gradedAssignments.some((a) => a.id === s.assignment_id)).length
   const overallSubRate = totalPossibleSubs > 0 ? Math.round((totalSubs / totalPossibleSubs) * 100) : 0
 
@@ -33,7 +34,7 @@ export default function AdminDashboard() {
     <div className="fade-in">
       <div className="page-header">
         <div className="page-title">운영진 대시보드</div>
-        <div className="page-subtitle">멋쟁이사자처럼 14기 프론트엔드 세션 현황</div>
+        <div className="page-subtitle">멋쟁이사자처럼 14기 {TRACK_LABELS[activeTrack]} 세션 현황</div>
       </div>
 
       <div className="stats-grid stagger-1 fade-in">

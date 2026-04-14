@@ -15,8 +15,9 @@ export default function MemberDashboard() {
   const { data: myAttendances = [] } = useMyAttendance()
   const { data: notices = [] } = useNotices()
 
+  const totalWeeks = weeks.length || 1
   const presentCount = myAttendances.filter((a) => a.status === 'PRESENT').length
-  const attRate = Math.round((presentCount / 10) * 100)
+  const attRate = Math.round((presentCount / totalWeeks) * 100)
 
   const submittedCount = mySubmissions.filter((s) => assignments.some((a) => a.id === s.assignment_id)).length
   const subRate = assignments.length > 0 ? Math.round((submittedCount / assignments.length) * 100) : 0
@@ -34,7 +35,7 @@ export default function MemberDashboard() {
         <div className="stat-card">
           <div className="stat-label">출석률</div>
           <div className="stat-value" style={{ color: attRate >= 80 ? 'var(--green)' : attRate >= 50 ? 'var(--yellow)' : 'var(--red)' }}>{attRate}%</div>
-          <div className="stat-sub">{presentCount}/10주 출석</div>
+          <div className="stat-sub">{presentCount}/{totalWeeks}주 출석</div>
           <div className="progress-bar" style={{ marginTop: 12 }}>
             <div className="progress-fill" style={{ width: `${attRate}%`, background: attRate >= 80 ? 'var(--green)' : attRate >= 50 ? 'var(--yellow)' : 'var(--red)' }} />
           </div>
@@ -53,14 +54,14 @@ export default function MemberDashboard() {
       <div className="card stagger-2 fade-in" style={{ marginBottom: 24 }}>
         <div className="section-title">출석 타임라인</div>
         <div className="att-timeline">
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => {
-            const w = weeks.find((wk) => wk.number === num)
-            const att = w ? myAttendances.find((a) => a.week_id === w.id) : null
-            const status = att?.status || (w ? (w.status === 'upcoming' ? 'future' : 'ABSENT') : 'future')
+          {weeks.map((w) => {
+            const num = w.number
+            const att = myAttendances.find((a) => a.week_id === w.id)
+            const status = att?.status || (w.status === 'upcoming' ? 'future' : 'ABSENT')
             const icon = status === 'PRESENT' ? '✓' : status === 'LATE' ? '!' : status === 'ABSENT' ? '✕' : status === 'PENDING' ? '?' : '·'
             const label = status === 'PRESENT' ? '출석' : status === 'LATE' ? '지각' : status === 'ABSENT' ? '결석' : status === 'PENDING' ? '미정' : ''
             return (
-              <div key={num} className={`att-cell ${status}`}>
+              <div key={w.id} className={`att-cell ${status}`}>
                 <div className="att-dot">{icon}</div>
                 <span className="att-week">{num}주</span>
                 {label && <span className="att-label">{label}</span>}

@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
+import { TRACKS, TRACK_LABELS, type Track } from '../../types'
 
 export default function SignupPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [dept, setDept] = useState('')
+  const [track, setTrack] = useState<Track>('FRONTEND')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { signUp } = useAuthStore()
@@ -22,7 +24,7 @@ export default function SignupPage() {
       return
     }
     setLoading(true)
-    const result = await signUp(email, password, name, dept)
+    const result = await signUp(email, password, name, dept, track)
     setLoading(false)
     if (result.error) {
       setError(result.error)
@@ -39,7 +41,7 @@ export default function SignupPage() {
         <div className="login-logo">
           <div className="logo-mark" style={{ width: 56, height: 56, fontSize: 22, margin: '0 auto 16px', borderRadius: 16 }}>LT</div>
           <div className="login-title">회원가입</div>
-          <div className="login-subtitle">멋쟁이사자처럼 14기 프론트엔드</div>
+          <div className="login-subtitle">멋쟁이사자처럼 14기</div>
         </div>
 
         {error && <div className="login-error">{error}</div>}
@@ -53,6 +55,14 @@ export default function SignupPage() {
           <label className="form-label">학과/소속</label>
           <input className="form-input" placeholder="컴퓨터공학과" value={dept}
             onChange={(e) => setDept(e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">트랙</label>
+          <select className="form-input" value={track} onChange={(e) => setTrack(e.target.value as Track)}>
+            {TRACKS.map((t) => (
+              <option key={t} value={t}>{TRACK_LABELS[t]}</option>
+            ))}
+          </select>
         </div>
         <div className="form-group">
           <label className="form-label">이메일</label>

@@ -1,18 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { useAuthStore } from '../stores/authStore'
 import type { Question, Answer } from '../types'
 
 export function useQuestions() {
+  const user = useAuthStore((s) => s.user)
+  const activeTrack = useAuthStore((s) => s.activeTrack)
   return useQuery({
-    queryKey: ['questions'],
+    queryKey: ['questions', activeTrack],
     queryFn: async (): Promise<Question[]> => {
       const { data, error } = await supabase
         .from('questions')
         .select('*')
+        .eq('track', activeTrack)
         .order('created_at', { ascending: false })
       if (error) throw error
       return data
     },
+    enabled: !!user,
   })
 }
 

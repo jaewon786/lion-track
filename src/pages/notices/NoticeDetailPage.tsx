@@ -10,7 +10,7 @@ export default function NoticeDetailPage() {
   const navigate = useNavigate()
   const { data: notice, isLoading } = useNotice(id!)
   const user = useAuthStore((s) => s.user)
-  const isAdmin = user?.role === 'ADMIN'
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
   const updateNotice = useUpdateNotice()
   const deleteNotice = useDeleteNotice()
 

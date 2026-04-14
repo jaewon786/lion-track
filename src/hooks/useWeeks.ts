@@ -5,12 +5,14 @@ import type { Week } from '../types'
 
 export function useWeeks() {
   const user = useAuthStore((s) => s.user)
+  const activeTrack = useAuthStore((s) => s.activeTrack)
   return useQuery({
-    queryKey: ['weeks'],
+    queryKey: ['weeks', activeTrack],
     queryFn: async (): Promise<Week[]> => {
       const { data, error } = await supabase
         .from('weeks')
         .select('*')
+        .eq('track', activeTrack)
         .order('number', { ascending: true })
       if (error) throw error
       return data
@@ -42,7 +44,7 @@ export function useCreateWeek() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (input: CreateWeekInput): Promise<Week> => {
+    mutationFn: async (input: CreateWeekInput & { track: string }): Promise<Week> => {
       const { data, error } = await supabase
         .from('weeks')
         .insert(input)

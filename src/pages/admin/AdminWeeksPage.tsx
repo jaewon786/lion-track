@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useCreateWeek, useWeeks, useUpdateWeek, useDeleteWeek } from '../../hooks/useWeeks'
 import { useMaterials, useCreateMaterial, uploadMaterialFile, useDeleteMaterial, getMaterialDownloadUrl } from '../../hooks/useMaterials'
+import { useAuthStore } from '../../stores/authStore'
 import { formatDate } from '../../utils/format'
 import { FileText, Link as LinkIcon, Plus, Upload, Trash2, Edit, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function AdminWeeksPage() {
+  const activeTrack = useAuthStore((s) => s.activeTrack)
   const { data: weeks = [] } = useWeeks()
   const createWeek = useCreateWeek()
   const updateWeek = useUpdateWeek()
@@ -108,6 +110,7 @@ export default function AdminWeeksPage() {
         description: weekForm.description.trim(),
         session_date: weekForm.session_date,
         status: 'upcoming',
+        track: activeTrack,
       })
       toast.success('주차가 생성되었습니다.')
       setShowWeekModal(false)

@@ -21,13 +21,15 @@ export function useProfiles() {
 
 export function useMembers() {
   const user = useAuthStore((s) => s.user)
+  const activeTrack = useAuthStore((s) => s.activeTrack)
   return useQuery({
-    queryKey: ['profiles', 'members'],
+    queryKey: ['profiles', 'members', activeTrack],
     queryFn: async (): Promise<Profile[]> => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('role', 'MEMBER')
+        .eq('track', activeTrack)
         .order('name', { ascending: true })
       if (error) throw error
       return data
