@@ -27,7 +27,8 @@ export default function AdminDashboard() {
   const totalSubs = submissions.filter((s) => gradedAssignments.some((a) => a.id === s.assignment_id)).length
   const overallSubRate = totalPossibleSubs > 0 ? Math.round((totalSubs / totalPossibleSubs) * 100) : 0
 
-  const openAsgn = assignments.filter((a) => a.status === 'open')
+  const now = new Date()
+  const openAsgn = assignments.filter((a) => a.status === 'open' && new Date(a.due_at) > now)
   const currentWeek = weeks.find((w) => w.status === 'current')
     || [...weeks].sort((a, b) => b.number - a.number)[0]
 

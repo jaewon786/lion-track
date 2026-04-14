@@ -5,8 +5,9 @@ import type { Material } from '../types'
 
 export function useMaterials(weekId?: string) {
   const user = useAuthStore((s) => s.user)
+  const activeTrack = useAuthStore((s) => s.activeTrack)
   return useQuery({
-    queryKey: ['materials', weekId ?? 'all'],
+    queryKey: ['materials', weekId ?? 'all', activeTrack],
     queryFn: async (): Promise<Material[]> => {
       let query = supabase.from('materials').select('*')
       if (weekId) query = query.eq('week_id', weekId)
@@ -15,6 +16,7 @@ export function useMaterials(weekId?: string) {
       return data
     },
     enabled: !!user,
+    staleTime: 0,
   })
 }
 

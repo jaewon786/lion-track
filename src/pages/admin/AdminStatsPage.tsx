@@ -94,12 +94,10 @@ export default function AdminStatsPage() {
             <div className="stat-card">
               <div className="stat-label">전체 수강생</div>
               <div className="stat-value" style={{ color: 'var(--accent)' }}>{members.length}</div>
-              <div className="stat-sub">명</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">진행 주차</div>
               <div className="stat-value" style={{ color: 'var(--blue)' }}>{completedWeeks.length}</div>
-              <div className="stat-sub">/ {weeks.length}주</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">평균 출석률</div>
@@ -113,44 +111,49 @@ export default function AdminStatsPage() {
             </div>
           </div>
 
-          {/* 주차별 출석률 바 차트 */}
+          {/* 주차별 출석률 막대 그래프 */}
           <div className="card" style={{ marginBottom: 24 }}>
             <div className="section-title">주차별 출석률</div>
-            <div className="chart-bar-group">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
               {completedWeeks.map((w) => {
                 const atts = completedAttendances.filter((a) => a.week_id === w.id)
                 const present = atts.filter((a) => a.status === 'PRESENT').length
                 const late = atts.filter((a) => a.status === 'LATE').length
                 const rate = members.length > 0 ? Math.round(((present + late) / members.length) * 100) : 0
+                const color = rate >= 80 ? 'var(--green)' : rate >= 60 ? 'var(--yellow)' : 'var(--red)'
                 return (
-                  <div className="chart-bar-item" key={w.id}>
-                    <div className="chart-bar-value">{rate}%</div>
-                    <div className="chart-bar" style={{ height: `${rate}%`, background: rate >= 80 ? 'var(--green)' : rate >= 60 ? 'var(--yellow)' : 'var(--red)' }} />
-                    <div className="chart-bar-label">{w.number}주</div>
+                  <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', minWidth: 36, textAlign: 'right' }}>{w.number}주</span>
+                    <div style={{ flex: 1, height: 24, background: 'var(--bg-secondary)', borderRadius: 6, overflow: 'hidden' }}>
+                      <div style={{ width: `${rate}%`, height: '100%', background: color, borderRadius: 6, transition: 'width 0.5s ease' }} />
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', minWidth: 40, textAlign: 'right' }}>{rate}%</span>
                   </div>
                 )
               })}
-              {completedWeeks.length === 0 && <div className="empty" style={{ width: '100%' }}>진행된 주차가 없습니다.</div>}
+              {completedWeeks.length === 0 && <div className="empty">진행된 주차가 없습니다.</div>}
             </div>
           </div>
 
-          {/* 주차별 과제 제출률 바 차트 */}
+          {/* 주차별 과제 제출률 막대 그래프 */}
           <div className="card">
             <div className="section-title">주차별 과제 제출률</div>
-            <div className="chart-bar-group">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
               {closedAssignments.map((a) => {
                 const w = weeks.find((wk) => wk.id === a.week_id)
                 const subs = submissions.filter((s) => s.assignment_id === a.id)
                 const rate = members.length > 0 ? Math.round((subs.length / members.length) * 100) : 0
                 return (
-                  <div className="chart-bar-item" key={a.id}>
-                    <div className="chart-bar-value">{rate}%</div>
-                    <div className="chart-bar" style={{ height: `${rate}%`, background: 'var(--accent)' }} />
-                    <div className="chart-bar-label">{w ? `${w.number}주` : '?'}</div>
+                  <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', minWidth: 36, textAlign: 'right' }}>{w ? `${w.number}주` : '?'}</span>
+                    <div style={{ flex: 1, height: 24, background: 'var(--bg-secondary)', borderRadius: 6, overflow: 'hidden' }}>
+                      <div style={{ width: `${rate}%`, height: '100%', background: 'var(--accent)', borderRadius: 6, transition: 'width 0.5s ease' }} />
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', minWidth: 40, textAlign: 'right' }}>{rate}%</span>
                   </div>
                 )
               })}
-              {closedAssignments.length === 0 && <div className="empty" style={{ width: '100%' }}>마감된 과제가 없습니다.</div>}
+              {closedAssignments.length === 0 && <div className="empty">마감된 과제가 없습니다.</div>}
             </div>
           </div>
 
