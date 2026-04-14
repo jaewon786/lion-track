@@ -33,6 +33,7 @@ export function useMyAttendance() {
 }
 
 export function useAllAttendances() {
+  const user = useAuthStore((s) => s.user)
   return useQuery({
     queryKey: ['attendances', 'all'],
     queryFn: async (): Promise<Attendance[]> => {
@@ -42,6 +43,7 @@ export function useAllAttendances() {
       if (error) throw error
       return data
     },
+    enabled: !!user,
     refetchInterval: 5000,
   })
 }

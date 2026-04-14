@@ -7,6 +7,18 @@ import { getStatusColor } from '../../utils/format'
 
 type Tab = 'overview' | 'attendance' | 'assignments' | 'members'
 
+function downloadCSV(filename: string, headers: string[], rows: string[][]) {
+  const BOM = '\uFEFF'
+  const content = BOM + [headers, ...rows].map(r => r.join(',')).join('\n')
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 export default function AdminStatsPage() {
   const { data: weeks = [] } = useWeeks()
   const { data: assignments = [] } = useAssignments()
@@ -16,12 +28,20 @@ export default function AdminStatsPage() {
 
   const [tab, setTab] = useState<Tab>('overview')
 
-  const completedWeeks = weeks.filter((w) => w.status !== 'upcoming')
-  const closedAssignments = assignments.filter((a) => a.status === 'closed')
+  // 출석 기록이 1건이라도 있는 주차를 통계에 포함
+  const attendedWeekIds = new Set(attendances.map((a) => a.week_id))
+  const completedWeeks = weeks.filter((w) => w.status !== 'upcoming' || attendedWeekIds.has(w.id))
+  const completedWeekIds = new Set(completedWeeks.map((w) => w.id))
+  const memberIds = new Set(members.map((m) => m.id))
+  const now = new Date()
+  const closedAssignments = assignments.filter((a) => a.status === 'closed' || (a.status === 'open' && new Date(a.due_at) < now))
+
+  // 통계 대상 주차 + 수강생(MEMBER)의 출석 기록만 필터링
+  const completedAttendances = attendances.filter((a) => completedWeekIds.has(a.week_id) && memberIds.has(a.user_id))
 
   // 전체 통계 수치
-  const totalPresent = attendances.filter((a) => a.status === 'PRESENT').length
-  const totalLate = attendances.filter((a) => a.status === 'LATE').length
+  const totalPresent = completedAttendances.filter((a) => a.status === 'PRESENT').length
+  const totalLate = completedAttendances.filter((a) => a.status === 'LATE').length
   const totalExpected = completedWeeks.length * members.length
   const overallAttRate = totalExpected > 0 ? Math.round(((totalPresent + totalLate) / totalExpected) * 100) : 0
 
@@ -31,18 +51,19 @@ export default function AdminStatsPage() {
 
   // 수강생별 데이터 계산
   const memberStats = members.map((m) => {
-    const atts = attendances.filter((a) => a.user_id === m.id)
+    const atts = completedAttendances.filter((a) => a.user_id === m.id)
     const present = atts.filter((a) => a.status === 'PRESENT').length
     const late = atts.filter((a) => a.status === 'LATE').length
-    const absent = completedWeeks.length - present - late
+    const absent = Math.max(0, completedWeeks.length - present - late)
     const attRate = completedWeeks.length > 0 ? Math.round(((present + late) / completedWeeks.length) * 100) : 0
 
     const subs = submissions.filter((s) => s.user_id === m.id)
     const submitted = closedAssignments.filter((a) => subs.some((s) => s.assignment_id === a.id)).length
     const subRate = closedAssignments.length > 0 ? Math.round((submitted / closedAssignments.length) * 100) : 0
 
-    return { ...m, present, late, absent, attRate, submitted, subRate }
-  }).sort((a, b) => b.attRate - a.attRate)
+    const totalScore = Math.round((attRate + subRate) / 2)
+    return { ...m, present, late, absent, attRate, submitted, subRate, totalScore }
+  }).sort((a, b) => b.totalScore - a.totalScore)
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'overview', label: '전체 요약' },
@@ -97,7 +118,7 @@ export default function AdminStatsPage() {
             <div className="section-title">주차별 출석률</div>
             <div className="chart-bar-group">
               {completedWeeks.map((w) => {
-                const atts = attendances.filter((a) => a.week_id === w.id)
+                const atts = completedAttendances.filter((a) => a.week_id === w.id)
                 const present = atts.filter((a) => a.status === 'PRESENT').length
                 const late = atts.filter((a) => a.status === 'LATE').length
                 const rate = members.length > 0 ? Math.round(((present + late) / members.length) * 100) : 0
@@ -132,6 +153,37 @@ export default function AdminStatsPage() {
               {closedAssignments.length === 0 && <div className="empty" style={{ width: '100%' }}>마감된 과제가 없습니다.</div>}
             </div>
           </div>
+
+          {/* 위험 수강생 */}
+          {(() => {
+            const atRiskMembers = memberStats.filter(m => m.attRate < 60 || m.subRate < 60)
+            return (
+              <div className="card" style={{ marginTop: 24 }}>
+                <div className="section-title">위험 수강생</div>
+                {atRiskMembers.length === 0 ? (
+                  <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--green)', fontWeight: 600 }}>
+                    모든 수강생이 기준을 충족합니다 ✓
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+                    {atRiskMembers.map(m => (
+                      <div key={m.id} style={{ padding: 16, borderRadius: 10, border: '1px solid var(--red)', background: 'rgba(239,68,68,0.06)' }}>
+                        <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>{m.name}</div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: m.attRate < 60 ? '#fff' : 'var(--text-muted)', background: m.attRate < 60 ? 'var(--red)' : 'var(--bg-secondary)', padding: '2px 8px', borderRadius: 6 }}>
+                            출석률 {m.attRate}%
+                          </span>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: m.subRate < 60 ? '#fff' : 'var(--text-muted)', background: m.subRate < 60 ? 'var(--red)' : 'var(--bg-secondary)', padding: '2px 8px', borderRadius: 6 }}>
+                            제출률 {m.subRate}%
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </>
       )}
 
@@ -149,7 +201,7 @@ export default function AdminStatsPage() {
             </div>
             <div className="stat-card">
               <div className="stat-label">결석</div>
-              <div className="stat-value" style={{ color: 'var(--red)' }}>{totalExpected > 0 ? totalExpected - totalPresent - totalLate : 0}</div>
+              <div className="stat-value" style={{ color: 'var(--red)' }}>{totalExpected > 0 ? Math.max(0, totalExpected - totalPresent - totalLate) : 0}</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">출석률</div>
@@ -158,7 +210,24 @@ export default function AdminStatsPage() {
           </div>
 
           <div className="card">
-            <div className="section-title">수강생별 출석 현황</div>
+            <div className="flex-between" style={{ marginBottom: 16 }}>
+              <div className="section-title">수강생별 출석 현황</div>
+              <button className="btn btn-secondary btn-sm" onClick={() => {
+                const headers = ['이름', '학과', ...completedWeeks.map(w => `${w.number}주`), '출석', '지각', '결석', '출석률']
+                const rows = memberStats.map(m => {
+                  const atts = completedAttendances.filter(a => a.user_id === m.id)
+                  return [
+                    m.name, m.department || '',
+                    ...completedWeeks.map(w => {
+                      const att = atts.find(a => a.week_id === w.id)
+                      return att?.status === 'PRESENT' ? '출' : att?.status === 'LATE' ? '지' : '결'
+                    }),
+                    String(m.present), String(m.late), String(m.absent), `${m.attRate}%`
+                  ]
+                })
+                downloadCSV('출석통계.csv', headers, rows)
+              }}>CSV 내보내기</button>
+            </div>
             <div style={{ overflowX: 'auto' }}>
               <table className="data-table">
                 <thead>
@@ -174,7 +243,7 @@ export default function AdminStatsPage() {
                 </thead>
                 <tbody>
                   {memberStats.map((m) => {
-                    const atts = attendances.filter((a) => a.user_id === m.id)
+                    const atts = completedAttendances.filter((a) => a.user_id === m.id)
                     return (
                       <tr key={m.id}>
                         <td style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>{m.name}</td>
@@ -227,7 +296,21 @@ export default function AdminStatsPage() {
           </div>
 
           <div className="card">
-            <div className="section-title">과제별 제출 현황</div>
+            <div className="flex-between" style={{ marginBottom: 16 }}>
+              <div className="section-title">과제별 제출 현황</div>
+              <button className="btn btn-secondary btn-sm" onClick={() => {
+                const headers = ['과제명', '주차', '상태', '제출수', '미제출수', '제출률']
+                const rows = assignments.map(a => {
+                  const w = weeks.find(wk => wk.id === a.week_id)
+                  const subs = submissions.filter(s => s.assignment_id === a.id)
+                  const rate = members.length > 0 ? Math.round((subs.length / members.length) * 100) : 0
+                  const isClosed = a.status === 'closed' || (a.status === 'open' && new Date(a.due_at) < now)
+                  const statusLabel = isClosed ? '마감' : a.status === 'open' ? '진행중' : '임시'
+                  return [a.title, w ? `${w.number}주차` : '-', statusLabel, String(subs.length), String(members.length - subs.length), `${rate}%`]
+                })
+                downloadCSV('과제통계.csv', headers, rows)
+              }}>CSV 내보내기</button>
+            </div>
             <div style={{ overflowX: 'auto' }}>
               <table className="data-table">
                 <thead>
@@ -245,8 +328,9 @@ export default function AdminStatsPage() {
                     const w = weeks.find((wk) => wk.id === a.week_id)
                     const subs = submissions.filter((s) => s.assignment_id === a.id)
                     const rate = members.length > 0 ? Math.round((subs.length / members.length) * 100) : 0
-                    const statusLabel = a.status === 'closed' ? '마감' : a.status === 'open' ? '진행중' : '임시'
-                    const statusColor = a.status === 'closed' ? 'var(--text-muted)' : a.status === 'open' ? 'var(--green)' : 'var(--yellow)'
+                    const isClosed = a.status === 'closed' || (a.status === 'open' && new Date(a.due_at) < now)
+                    const statusLabel = isClosed ? '마감' : a.status === 'open' ? '진행중' : '임시'
+                    const statusColor = isClosed ? 'var(--text-muted)' : a.status === 'open' ? 'var(--green)' : 'var(--yellow)'
                     return (
                       <tr key={a.id}>
                         <td style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{w ? `${w.number}주차` : '-'}</td>
@@ -322,7 +406,17 @@ export default function AdminStatsPage() {
       {/* ━━━ 수강생별 통계 ━━━ */}
       {tab === 'members' && (
         <div className="card">
-          <div className="section-title">수강생 종합 현황</div>
+          <div className="flex-between" style={{ marginBottom: 16 }}>
+            <div className="section-title">수강생 종합 현황</div>
+            <button className="btn btn-secondary btn-sm" onClick={() => {
+              const headers = ['이름', '학과', '출석', '지각', '결석', '출석률', '과제제출수', '제출률', '종합점수']
+              const rows = memberStats.map(m => [
+                m.name, m.department || '', String(m.present), String(m.late), String(m.absent),
+                `${m.attRate}%`, String(m.submitted), `${m.subRate}%`, `${m.totalScore}%`
+              ])
+              downloadCSV('수강생별통계.csv', headers, rows)
+            }}>CSV 내보내기</button>
+          </div>
           <div style={{ overflowX: 'auto' }}>
             <table className="data-table">
               <thead>
@@ -335,12 +429,15 @@ export default function AdminStatsPage() {
                   <th>출석률</th>
                   <th>과제 제출</th>
                   <th>제출률</th>
+                  <th>종합점수</th>
                 </tr>
               </thead>
               <tbody>
                 {memberStats.map((m) => (
                   <tr key={m.id}>
-                    <td style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>{m.name}</td>
+                    <td style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                      {m.name}
+                    </td>
                     <td style={{ whiteSpace: 'nowrap' }}>{m.department}</td>
                     <td style={{ textAlign: 'center', fontWeight: 600, color: 'var(--green)' }}>{m.present}</td>
                     <td style={{ textAlign: 'center', fontWeight: 600, color: 'var(--yellow)' }}>{m.late}</td>
@@ -362,6 +459,14 @@ export default function AdminStatsPage() {
                           <div className="progress-fill" style={{ width: `${m.subRate}%`, background: m.subRate >= 80 ? 'var(--green)' : m.subRate >= 50 ? 'var(--yellow)' : 'var(--red)' }} />
                         </div>
                         <span style={{ fontWeight: 700, fontSize: 12, color: 'var(--text-primary)', minWidth: 36, textAlign: 'right' }}>{m.subRate}%</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div className="progress-bar" style={{ flex: 1, minWidth: 48 }}>
+                          <div className="progress-fill" style={{ width: `${m.totalScore}%`, background: m.totalScore >= 80 ? 'var(--green)' : m.totalScore >= 50 ? 'var(--yellow)' : 'var(--red)' }} />
+                        </div>
+                        <span style={{ fontWeight: 700, fontSize: 12, color: 'var(--text-primary)', minWidth: 36, textAlign: 'right' }}>{m.totalScore}%</span>
                       </div>
                     </td>
                   </tr>

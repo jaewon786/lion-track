@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { useAuthStore } from '../stores/authStore'
 import type { Week } from '../types'
 
 export function useWeeks() {
+  const user = useAuthStore((s) => s.user)
   return useQuery({
     queryKey: ['weeks'],
     queryFn: async (): Promise<Week[]> => {
@@ -13,6 +15,7 @@ export function useWeeks() {
       if (error) throw error
       return data
     },
+    enabled: !!user,
   })
 }
 

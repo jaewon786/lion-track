@@ -134,6 +134,18 @@ body {
 .week-status.current { background: var(--accent-dim); color: var(--accent); }
 .week-status.upcoming { background: rgba(148,163,184,0.1); color: var(--text-muted); }
 
+/* Weeks List */
+.week-list { display: flex; flex-direction: column; gap: 12px; }
+.week-list-card { display: flex; align-items: center; gap: 16px; }
+.week-list-number {
+  min-width: 72px; text-align: center; font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700; padding: 8px 4px; border-radius: 10px;
+  background: var(--accent-dim); color: var(--accent);
+}
+.week-list-info { flex: 1; min-width: 0; }
+.week-list-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.week-list-meta { font-size: 12px; color: var(--text-secondary); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
 /* Assignments */
 .assignment-list { display: flex; flex-direction: column; gap: 12px; }
 .assignment-card { display: flex; align-items: center; gap: 16px; }

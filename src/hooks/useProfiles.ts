@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { useAuthStore } from '../stores/authStore'
 import type { Profile } from '../types'
 
 export function useProfiles() {
+  const user = useAuthStore((s) => s.user)
   return useQuery({
     queryKey: ['profiles'],
     queryFn: async (): Promise<Profile[]> => {
@@ -13,10 +15,12 @@ export function useProfiles() {
       if (error) throw error
       return data
     },
+    enabled: !!user,
   })
 }
 
 export function useMembers() {
+  const user = useAuthStore((s) => s.user)
   return useQuery({
     queryKey: ['profiles', 'members'],
     queryFn: async (): Promise<Profile[]> => {
@@ -28,5 +32,6 @@ export function useMembers() {
       if (error) throw error
       return data
     },
+    enabled: !!user,
   })
 }

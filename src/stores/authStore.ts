@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { queryClient } from '../lib/queryClient'
 import type { Profile } from '../types'
+
+let authListenerRegistered = false
 
 interface AuthState {
   user: Profile | null
@@ -16,30 +19,43 @@ export const useAuthStore = create<AuthState>((set) => ({
   loading: true,
 
   initialize: async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session?.user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
-      set({ user: profile, loading: false })
-    } else {
-      set({ user: null, loading: false })
-    }
-
-    supabase.auth.onAuthStateChange(async (_event, session) => {
+    // 초기 세션 복원
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
           .single()
-        set({ user: profile })
+        set({ user: profile ?? null, loading: false })
       } else {
-        set({ user: null })
+        set({ user: null, loading: false })
       }
-    })
+    } catch (error) {
+      console.error('Auth initialization failed:', error)
+      set({ user: null, loading: false })
+    }
+
+    // 이후 로그인/로그아웃 감지
+    if (!authListenerRegistered) {
+      authListenerRegistered = true
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'INITIAL_SESSION') return
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+          set({ user: profile ?? null, loading: false })
+          queryClient.invalidateQueries()
+        } else {
+          set({ user: null, loading: false })
+          queryClient.clear()
+        }
+      })
+    }
   },
 
   signIn: async (email, password) => {

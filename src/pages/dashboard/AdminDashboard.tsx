@@ -27,6 +27,7 @@ export default function AdminDashboard() {
 
   const openAsgn = assignments.filter((a) => a.status === 'open')
   const currentWeek = weeks.find((w) => w.status === 'current')
+    || [...weeks].sort((a, b) => b.number - a.number)[0]
 
   return (
     <div className="fade-in">
