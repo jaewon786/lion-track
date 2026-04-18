@@ -321,13 +321,12 @@ export async function downloadSubmissionFile(filePath: string, fileName?: string
     return
   }
 
-  try {
-    const { data, error } = await supabase.storage
-      .from('submissions')
-      .download(filePath)
+  // 1) Try direct authenticated download
+  const { data, error } = await supabase.storage
+    .from('submissions')
+    .download(filePath)
 
-    if (error) throw error
-
+  if (!error && data) {
     const blobUrl = URL.createObjectURL(data)
     const link = document.createElement('a')
     link.href = blobUrl
@@ -336,15 +335,36 @@ export async function downloadSubmissionFile(filePath: string, fileName?: string
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(blobUrl)
-  } catch {
-    const { data, error } = await supabase.storage
-      .from('submissions')
-      .createSignedUrl(filePath, 60)
-
-    if (error || !data?.signedUrl) {
-      throw new Error('제출 파일 다운로드 권한이 없습니다. submissions 버킷 SELECT 정책을 확인해주세요.')
-    }
-
-    window.open(data.signedUrl, '_blank', 'noopener,noreferrer')
+    return
   }
+
+  // 2) Fallback: signed URL (works if SELECT policy allows)
+  const { data: signedData, error: signedError } = await supabase.storage
+    .from('submissions')
+    .createSignedUrl(filePath, 60)
+
+  if (!signedError && signedData?.signedUrl) {
+    window.open(signedData.signedUrl, '_blank', 'noopener,noreferrer')
+    return
+  }
+
+  // 3) Fallback: public URL (works if bucket is public)
+  const { data: publicData } = supabase.storage
+    .from('submissions')
+    .getPublicUrl(filePath)
+
+  if (publicData?.publicUrl) {
+    // Verify that the public URL is accessible before opening
+    try {
+      const res = await fetch(publicData.publicUrl, { method: 'HEAD' })
+      if (res.ok) {
+        window.open(publicData.publicUrl, '_blank', 'noopener,noreferrer')
+        return
+      }
+    } catch {
+      // public URL also not accessible
+    }
+  }
+
+  throw new Error('제출 파일 다운로드 권한이 없습니다. Supabase Storage의 submissions 버킷에 SELECT 정책을 추가해주세요.')
 }
