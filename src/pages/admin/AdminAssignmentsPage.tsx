@@ -135,8 +135,9 @@ export default function AdminAssignmentsPage() {
       const fileName = getDisplayFileName(filePath)
       await downloadSubmissionFile(filePath, fileName)
       toast.success('제출 파일 다운로드가 시작되었습니다.')
-    } catch {
-      toast.error('제출 파일 다운로드에 실패했습니다.')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '제출 파일 다운로드에 실패했습니다.'
+      toast.error(message)
     }
   }
 
